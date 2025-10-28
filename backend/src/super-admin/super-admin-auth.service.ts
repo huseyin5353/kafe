@@ -1,14 +1,11 @@
 import {
   Injectable,
   UnauthorizedException,
-  BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
-import { SuperAdminRegisterDto } from './dto/super-admin-register.dto';
 
 @Injectable()
 export class SuperAdminAuthService {
@@ -16,62 +13,6 @@ export class SuperAdminAuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
-
-  async register(dto: SuperAdminRegisterDto) {
-    // Duplicate email kontrolü
-    const existingEmail = await this.prisma.super_admins.findUnique({
-      where: { email: dto.email },
-    });
-
-    if (existingEmail) {
-      throw new ConflictException('Bu email adresi zaten kayıtlı');
-    }
-
-    // Duplicate username kontrolü
-    const existingUsername = await this.prisma.super_admins.findUnique({
-      where: { username: dto.username },
-    });
-
-    if (existingUsername) {
-      throw new ConflictException('Bu kullanıcı adı zaten kullanılıyor');
-    }
-
-    // Transaction ile kayıt
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Şifreyi hashle
-      const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-      // Super admin oluştur
-      const superAdmin = await tx.super_admins.create({
-        data: {
-          username: dto.username,
-          email: dto.email,
-          password_hash: hashedPassword,
-          full_name: dto.full_name,
-          phone: dto.phone,
-          role: 'super_admin',
-          is_active: true,
-        },
-      });
-
-      // Token oluştur
-      const token = await this.generateToken(superAdmin);
-
-      return {
-        message: 'Super admin başarıyla oluşturuldu',
-        token,
-        user: {
-          id: superAdmin.id,
-          username: superAdmin.username,
-          email: superAdmin.email,
-          full_name: superAdmin.full_name,
-          role: superAdmin.role,
-        },
-      };
-    });
-
-    return result;
-  }
 
   async login(dto: SuperAdminLoginDto) {
     // Super admin'i bul
