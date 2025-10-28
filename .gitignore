@@ -55,6 +55,7 @@ node_modules/.prisma/
 # Logs
 logs/
 *.log
+backend/logs/
 
 # Uploads
 uploads/
