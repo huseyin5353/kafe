@@ -52,7 +52,7 @@ export class SuperAdminAuthService {
       message: 'Giriş başarılı',
       token,
       user: {
-        id: superAdmin.id,
+        id: superAdmin.id.toString(), // BigInt to string
         username: superAdmin.username,
         email: superAdmin.email,
         full_name: superAdmin.full_name,
@@ -81,7 +81,10 @@ export class SuperAdminAuthService {
       throw new UnauthorizedException('Kullanıcı bulunamadı');
     }
 
-    return superAdmin;
+    return {
+      ...superAdmin,
+      id: superAdmin.id.toString(), // BigInt to string
+    };
   }
 
   private async generateToken(superAdmin: any) {
