@@ -3,11 +3,17 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
+import { NestFastifyApplication, FastifyAdapter } from '@nestjs/platform-fastify';
+import compress from '@fastify/compress';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({ logger: true }),
+  );
+
+  // Compression
+  await app.register(compress, { global: true });
 
   // Enable CORS
   app.enableCors({
@@ -33,8 +39,16 @@ async function bootstrap() {
     }),
   );
 
+  // BigInt JSON serialization (Fastify JSON.stringify uyumu)
+  if (!(BigInt.prototype as any).toJSON) {
+    // eslint-disable-next-line no-extend-native
+    (BigInt.prototype as any).toJSON = function () {
+      return this.toString();
+    };
+  }
+
   const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`🚀 Server running on http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Server running (Fastify) on http://localhost:${port}`);
 }
 bootstrap();

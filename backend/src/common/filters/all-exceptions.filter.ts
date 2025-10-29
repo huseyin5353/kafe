@@ -6,7 +6,6 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { ThrottlerException } from '@nestjs/throttler';
 
@@ -16,8 +15,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const response: any = ctx.getResponse();
+    const request: any = ctx.getRequest();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
@@ -121,9 +120,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       method: request.method,
       status,
       message,
-      user: (request as any).user?.userId || 'anonymous',
-      ip: request.ip,
-      userAgent: request.get('user-agent'),
+      user: request?.user?.userId || 'anonymous',
+      ip: request?.ip || request?.ips?.[0] || request?.socket?.remoteAddress,
+      userAgent: request?.headers?.['user-agent'] || (typeof request?.get === 'function' ? request.get('user-agent') : undefined),
     };
 
     if (status >= 500) {
@@ -135,14 +134,31 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Response
-    response.status(status).json({
+    const body = {
       success: false,
       statusCode: status,
       message,
       errors,
       timestamp: new Date().toISOString(),
-      path: request.url,
-    });
+      path: request?.url,
+    };
+
+    if (typeof response.status === 'function' && typeof response.json === 'function') {
+      // Express-like
+      response.status(status).json(body);
+    } else if (typeof response.status === 'function' && typeof response.send === 'function') {
+      // Fastify-compatible
+      response.status(status).send(body);
+    } else if (typeof response.code === 'function' && typeof response.send === 'function') {
+      // Fastify classic
+      response.code(status).send(body);
+    } else {
+      try {
+        response.send(body);
+      } catch {
+        // noop
+      }
+    }
   }
 }
 
