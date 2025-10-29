@@ -39,3 +39,4 @@ ON CONFLICT (email) DO NOTHING; -- Zaten varsa ekleme
 -- Super adminleri görüntülemek için:
 -- SELECT id, username, email, full_name, role, is_active, created_at FROM super_admins;
 
+

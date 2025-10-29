@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SuperAdminAuthService } from './super-admin-auth.service';
-import { SuperAdminAuthController } from './super-admin-auth.controller';
-import { SuperAdminDashboardService } from './super-admin-dashboard.service';
+import { TenantAuthController } from './tenant-auth.controller';
+import { TenantAuthService } from './tenant-auth.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -17,8 +17,10 @@ import { SuperAdminDashboardService } from './super-admin-dashboard.service';
       }),
       inject: [ConfigService],
     }),
+    PrismaModule,
   ],
-  providers: [SuperAdminAuthService, SuperAdminDashboardService],
-  controllers: [SuperAdminAuthController],
+  controllers: [TenantAuthController],
+  providers: [TenantAuthService],
 })
-export class SuperAdminModule {}
+export class TenantModule {}
+

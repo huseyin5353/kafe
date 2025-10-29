@@ -24,3 +24,4 @@ bcrypt.hash(password, 10, (err, hash) => {
   console.log(`password_hash: '${hash}'`);
 });
 
+
